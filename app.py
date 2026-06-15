@@ -6,7 +6,8 @@ from datetime import date
 from utils.helpers import (
     detect_source,
     open_job_link,
-    status_emoji
+    status_emoji,
+    extract_keywords
 )
 
 from utils.database import (
@@ -53,6 +54,13 @@ add_column_if_missing(
     cursor,
     conn,
     "job_description"
+)
+
+add_column_if_missing(
+
+    cursor,
+    conn,
+    "keywords"
 )
 
 # ------------------------
@@ -125,6 +133,16 @@ with tab1:
     height=250
     )
 
+    keywords = extract_keywords(
+    job_description
+    )
+
+    if keywords:
+
+        st.success(
+            f"Keywords: {keywords}"
+        )
+
     if st.button("Save Job"):
 
         cursor.execute(
@@ -140,9 +158,10 @@ with tab1:
                 followup_date,
                 status,
                 notes,
-                job_description
+                job_description,
+                keywords
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -154,7 +173,8 @@ with tab1:
                 str(followup_date),
                 status,
                 notes,
-                job_description
+                job_description,
+                keywords
             )
         )
 
@@ -330,7 +350,8 @@ with tab2:
             columns=[
                 "id",
                 "url",
-                "job_description"
+                "job_description",
+                "keywords"
             ],
             errors="ignore"
         )

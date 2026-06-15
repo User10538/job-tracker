@@ -369,10 +369,16 @@ with tab2:
             )
         )
 
-        st.dataframe(
-            display_df,
-            use_container_width=True
+        table_df = display_df.drop(
+        columns=["id", "url"],
+        errors="ignore"
         )
+
+        st.dataframe(
+        table_df,
+        use_container_width=True,
+        hide_index=True
+    )
 
         # ------------------------
         # EXPORT

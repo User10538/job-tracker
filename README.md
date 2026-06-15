@@ -29,6 +29,8 @@ The application runs locally on Windows and stores all data in a SQLite database
 
 ---
 
+# To run it in VS Code, use streamlit run app.py
+
 # Features Implemented
 
 ## 1. Job Management

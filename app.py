@@ -11,6 +11,28 @@ DB = "jobs.db"
 conn = sqlite3.connect(DB, check_same_thread=False)
 cursor = conn.cursor()
 
+def add_column_if_missing(column_name):
+
+    cursor.execute(
+        "PRAGMA table_info(jobs)"
+    )
+
+    columns = [
+        row[1]
+        for row in cursor.fetchall()
+    ]
+
+    if column_name not in columns:
+
+        cursor.execute(
+            f"""
+            ALTER TABLE jobs
+            ADD COLUMN {column_name} TEXT
+            """
+        )
+
+        conn.commit()
+
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,6 +47,38 @@ CREATE TABLE IF NOT EXISTS jobs (
 """)
 
 conn.commit()
+
+add_column_if_missing(
+    "interview_date"
+)
+
+add_column_if_missing(
+    "followup_date"
+)
+
+# ------------------------
+# HELPER FUNCTION
+# ------------------------
+
+def detect_source(url):
+    url = (url or "").lower()
+
+    if "linkedin" in url:
+        return "LinkedIn"
+
+    if "seek" in url:
+        return "Seek"
+
+    if "indeed" in url:
+        return "Indeed"
+
+    return "Other"
+
+
+def open_job_link(url):
+    if url:
+        st.markdown(f"[🔗 Open Job Posting]({url})")
+
 
 # ------------------------
 # PAGE CONFIG
@@ -57,20 +111,27 @@ with tab1:
 
     company = st.text_input("Company")
 
-    source = st.selectbox(
-        "Source",
-        [
-            "LinkedIn",
-            "Seek",
-            "Indeed",
-            "Other"
-        ]
-    )
-
     url = st.text_input("Job URL")
 
+    source = detect_source(url)
+
+    st.info(f"Detected Source: {source}")
+
+    from datetime import date
+
     application_date = st.date_input(
-        "Application Date"
+        "Application Date",
+        value=date.today()
+    )
+
+    interview_date = st.date_input(
+    "Interview Date",
+    value=date.today()
+    )
+
+    followup_date = st.date_input(
+        "Follow-up Date",
+        value=date.today()
     )
 
     status = st.selectbox(
@@ -97,10 +158,12 @@ with tab1:
                 source,
                 url,
                 application_date,
+                interview_date,
+                followup_date,
                 status,
                 notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -108,6 +171,8 @@ with tab1:
                 source,
                 url,
                 str(application_date),
+                str(interview_date),
+                str(followup_date),
                 status,
                 notes
             )
@@ -167,6 +232,34 @@ with tab2:
         "Offers",
         offers
     )
+
+    st.sidebar.divider()
+
+    st.sidebar.subheader(
+        "Upcoming Interviews"
+    )
+
+    interview_jobs = df[
+        df["status"] == "Interview"
+    ]
+
+    if not interview_jobs.empty:
+
+        for _, row in interview_jobs.iterrows():
+
+            st.sidebar.write(
+                f"📅 {row['company']}"
+            )
+
+            st.sidebar.caption(
+                row["interview_date"]
+            )
+
+    else:
+
+        st.sidebar.write(
+            "No interviews scheduled"
+        )
 
     st.subheader("Tracked Jobs")
 
@@ -325,6 +418,11 @@ with tab2:
         current_job = df[
             df["id"] == selected_job
         ].iloc[0]
+
+        if current_job["url"]:
+            st.markdown(
+                f"### 🔗 [Open Job Posting]({current_job['url']})"
+            )
 
         statuses = [
             "New",

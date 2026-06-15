@@ -49,6 +49,12 @@ add_column_if_missing(
     "followup_date"
 )
 
+add_column_if_missing(
+    cursor,
+    conn,
+    "job_description"
+)
+
 # ------------------------
 # PAGE CONFIG
 # ------------------------
@@ -114,6 +120,11 @@ with tab1:
 
     notes = st.text_area("Notes")
 
+    job_description = st.text_area(
+    "Job Description",
+    height=250
+    )
+
     if st.button("Save Job"):
 
         cursor.execute(
@@ -128,9 +139,10 @@ with tab1:
                 interview_date,
                 followup_date,
                 status,
-                notes
+                notes,
+                job_description
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -141,7 +153,8 @@ with tab1:
                 str(interview_date),
                 str(followup_date),
                 status,
-                notes
+                notes,
+                job_description
             )
         )
 
@@ -314,7 +327,11 @@ with tab2:
         )
 
         table_df = display_df.drop(
-            columns=["id", "url"],
+            columns=[
+                "id",
+                "url",
+                "job_description"
+            ],
             errors="ignore"
         )
 

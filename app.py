@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     title TEXT,
     company TEXT,
     source TEXT,
+    url TEXT,
+    application_date TEXT,
     status TEXT,
     notes TEXT
 )
@@ -31,29 +33,58 @@ with tab1:
 
     title = st.text_input("Job Title")
     company = st.text_input("Company")
+
     source = st.selectbox(
         "Source",
         ["LinkedIn", "Seek", "Indeed", "Other"]
     )
+
+    url = st.text_input("Job URL")
+
+    application_date = st.date_input(
+        "Application Date"
+    )
+
     status = st.selectbox(
         "Status",
         ["New", "Applied", "Interview", "Rejected", "Offer"]
     )
+
     notes = st.text_area("Notes")
 
     if st.button("Save Job"):
+
         cursor.execute(
             """
             INSERT INTO jobs
-            (title, company, source, status, notes)
-            VALUES (?, ?, ?, ?, ?)
+            (
+                title,
+                company,
+                source,
+                url,
+                application_date,
+                status,
+                notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (title, company, source, status, notes)
+            (
+                title,
+                company,
+                source,
+                url,
+                str(application_date),
+                status,
+                notes
+            )
         )
+
         conn.commit()
+
         st.success("Job saved!")
 
 with tab2:
+
     st.subheader("Tracked Jobs")
 
     df = pd.read_sql_query(
@@ -61,9 +92,54 @@ with tab2:
         conn
     )
 
-    st.dataframe(df, use_container_width=True)
-
     if not df.empty:
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric(
+            "Total Jobs",
+            len(df)
+        )
+
+        col2.metric(
+            "Applied",
+            len(df[df["status"] == "Applied"])
+        )
+
+        col3.metric(
+            "Interviews",
+            len(df[df["status"] == "Interview"])
+        )
+
+        col4.metric(
+            "Offers",
+            len(df[df["status"] == "Offer"])
+        )
+
+        search = st.text_input(
+            "Search Company or Job"
+        )
+
+        if search:
+            df = df[
+                df["title"].str.contains(
+                    search,
+                    case=False,
+                    na=False
+                )
+                |
+                df["company"].str.contains(
+                    search,
+                    case=False,
+                    na=False
+                )
+            ]
+
+        st.dataframe(
+            df,
+            use_container_width=True
+        )
+
         csv = df.to_csv(index=False)
 
         st.download_button(
@@ -72,3 +148,6 @@ with tab2:
             "jobs.csv",
             "text/csv"
         )
+
+    else:
+        st.info("No jobs added yet.")

@@ -1,6 +1,17 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+from datetime import date
+
+from utils.helpers import (
+    detect_source,
+    open_job_link,
+    status_emoji
+)
+
+from utils.database import (
+    add_column_if_missing
+)
 
 DB = "jobs.db"
 
@@ -10,28 +21,6 @@ DB = "jobs.db"
 
 conn = sqlite3.connect(DB, check_same_thread=False)
 cursor = conn.cursor()
-
-def add_column_if_missing(column_name):
-
-    cursor.execute(
-        "PRAGMA table_info(jobs)"
-    )
-
-    columns = [
-        row[1]
-        for row in cursor.fetchall()
-    ]
-
-    if column_name not in columns:
-
-        cursor.execute(
-            f"""
-            ALTER TABLE jobs
-            ADD COLUMN {column_name} TEXT
-            """
-        )
-
-        conn.commit()
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS jobs (
@@ -49,36 +38,16 @@ CREATE TABLE IF NOT EXISTS jobs (
 conn.commit()
 
 add_column_if_missing(
+    cursor,
+    conn,
     "interview_date"
 )
 
 add_column_if_missing(
+    cursor,
+    conn,
     "followup_date"
 )
-
-# ------------------------
-# HELPER FUNCTION
-# ------------------------
-
-def detect_source(url):
-    url = (url or "").lower()
-
-    if "linkedin" in url:
-        return "LinkedIn"
-
-    if "seek" in url:
-        return "Seek"
-
-    if "indeed" in url:
-        return "Indeed"
-
-    return "Other"
-
-
-def open_job_link(url):
-    if url:
-        st.markdown(f"[🔗 Open Job Posting]({url})")
-
 
 # ------------------------
 # PAGE CONFIG
@@ -116,8 +85,6 @@ with tab1:
     source = detect_source(url)
 
     st.info(f"Detected Source: {source}")
-
-    from datetime import date
 
     application_date = st.date_input(
         "Application Date",
@@ -340,46 +307,22 @@ with tab2:
                 )
             ]
 
-        # ------------------------
-        # STATUS EMOJIS
-        # ------------------------
-
-        def status_emoji(status):
-
-            mapping = {
-                "New": "🟡",
-                "Applied": "🔵",
-                "Interview": "🟣",
-                "Rejected": "🔴",
-                "Offer": "🟢"
-            }
-
-            return mapping.get(
-                status,
-                "⚪"
-            )
-
         display_df = filtered_df.copy()
 
-        display_df["status"] = (
-            display_df["status"]
-            .apply(
-                lambda x:
-                f"{status_emoji(x)} {x}"
-            )
+        display_df["status"] = display_df["status"].apply(
+            lambda x: f"{status_emoji(x)} {x}"
         )
 
         table_df = display_df.drop(
-        columns=["id", "url"],
-        errors="ignore"
+            columns=["id", "url"],
+            errors="ignore"
         )
 
         st.dataframe(
-        table_df,
-        use_container_width=True,
-        hide_index=True
-    )
-
+            table_df,
+            use_container_width=True,
+            hide_index=True
+        )
         # ------------------------
         # EXPORT
         # ------------------------
@@ -425,10 +368,7 @@ with tab2:
             df["id"] == selected_job
         ].iloc[0]
 
-        if current_job["url"]:
-            st.markdown(
-                f"### 🔗 [Open Job Posting]({current_job['url']})"
-            )
+        open_job_link(current_job["url"])
 
         statuses = [
             "New",

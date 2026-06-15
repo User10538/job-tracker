@@ -94,30 +94,40 @@ with tab2:
 
     if not df.empty:
 
+        # Dashboard Stats
+        total_jobs = len(df)
+        applied = len(df[df["status"] == "Applied"])
+        interviews = len(df[df["status"] == "Interview"])
+        offers = len(df[df["status"] == "Offer"])
+
         col1, col2, col3, col4 = st.columns(4)
 
-        col1.metric(
-            "Total Jobs",
-            len(df)
+        col1.metric("Total Jobs", total_jobs)
+        col2.metric("Applied", applied)
+        col3.metric("Interviews", interviews)
+        col4.metric("Offers", offers)
+
+        st.divider()
+
+        # Status Filter
+        selected_status = st.selectbox(
+            "Filter by Status",
+            [
+                "All",
+                "New",
+                "Applied",
+                "Interview",
+                "Rejected",
+                "Offer"
+            ]
         )
 
-        col2.metric(
-            "Applied",
-            len(df[df["status"] == "Applied"])
-        )
+        if selected_status != "All":
+            df = df[df["status"] == selected_status]
 
-        col3.metric(
-            "Interviews",
-            len(df[df["status"] == "Interview"])
-        )
-
-        col4.metric(
-            "Offers",
-            len(df[df["status"] == "Offer"])
-        )
-
+        # Search Box
         search = st.text_input(
-            "Search Company or Job"
+            "Search Job Title or Company"
         )
 
         if search:
@@ -136,10 +146,68 @@ with tab2:
             ]
 
         st.dataframe(
-            df,
-            use_container_width=True
+    df,
+    use_container_width=True
+)
+
+st.divider()
+st.subheader("Update Job Status")
+
+job_ids = df["id"].tolist()
+
+if job_ids:
+
+    selected_job = st.selectbox(
+        "Select Job ID",
+        job_ids
+    )
+
+    current_job = df[df["id"] == selected_job].iloc[0]
+
+    st.write(
+        f"**{current_job['title']}** at **{current_job['company']}**"
+    )
+
+    new_status = st.selectbox(
+        "New Status",
+        [
+            "New",
+            "Applied",
+            "Interview",
+            "Rejected",
+            "Offer"
+        ],
+        index=[
+            "New",
+            "Applied",
+            "Interview",
+            "Rejected",
+            "Offer"
+        ].index(current_job["status"])
+    )
+
+    if st.button("Update Status"):
+
+        cursor.execute(
+            """
+            UPDATE jobs
+            SET status = ?
+            WHERE id = ?
+            """,
+            (
+                new_status,
+                int(selected_job)
+            )
         )
 
+        conn.commit()
+
+        st.success(
+            f"Job {selected_job} updated to {new_status}"
+        )
+
+        st.rerun()
+        
         csv = df.to_csv(index=False)
 
         st.download_button(

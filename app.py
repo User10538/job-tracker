@@ -85,8 +85,8 @@ st.title("📋 Personal Job Tracker")
 # TABS
 # ------------------------
 
-tab1, tab2 = st.tabs(
-    ["Add Job", "View Jobs"]
+tab1, tab2, tab3= st.tabs(
+    ["Add Job", "View Jobs", "Application Funnel"]
 )
 
 # ------------------------
@@ -527,7 +527,7 @@ with tab2:
             value=current_job["notes"],
             key="edit_notes"
         )
-        
+
         edit_job_description = st.text_area(
             "Job Description",
             value=current_job["job_description"],
@@ -591,11 +591,18 @@ with tab2:
                 )
 
             st.rerun()
+            
+        else:
+            st.info(
+            "No jobs added yet."
+             )
 
-        # ------------------------
-        # FUNNEL
-        # ------------------------
+# ------------------------
+# FUNNEL
+# ------------------------
 
+
+with tab3:
         st.divider()
 
         st.subheader(
@@ -616,13 +623,7 @@ with tab2:
                 "Offer"
             ]
         )
-
+        
         st.bar_chart(
             funnel_data
-        )
-
-    else:
-
-        st.info(
-            "No jobs added yet."
-        )
+            )

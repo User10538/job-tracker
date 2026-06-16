@@ -7,7 +7,8 @@ from utils.helpers import (
     detect_source,
     open_job_link,
     status_emoji,
-    extract_keywords
+    extract_keywords,
+    generate_recruiter_notes
 )
 
 from utils.database import (
@@ -61,6 +62,12 @@ add_column_if_missing(
     cursor,
     conn,
     "keywords"
+)
+
+add_column_if_missing(
+    cursor,
+    conn,
+    "recruiter_notes"
 )
 
 # ------------------------
@@ -137,7 +144,21 @@ with tab1:
     job_description
     )
 
+    recruiter_notes = generate_recruiter_notes(
+    keywords
+    )
+
     if keywords:
+
+        st.subheader(
+        "Recruiter Cheat Sheet"
+    )
+
+        st.text_area(
+            "Recruiter Notes",
+            recruiter_notes,
+            height=250
+    )
 
         st.success(
             f"Keywords: {keywords}"
@@ -159,9 +180,10 @@ with tab1:
                 status,
                 notes,
                 job_description,
-                keywords
+                keywords,
+                recruiter_notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -174,7 +196,8 @@ with tab1:
                 status,
                 notes,
                 job_description,
-                keywords
+                keywords,
+                recruiter_notes
             )
         )
 
@@ -475,6 +498,99 @@ with tab2:
                 )
 
                 st.rerun()
+
+        # ------------------------
+        # Edit the Job details
+        # ------------------------
+
+        st.divider()
+
+        st.subheader("Edit Job Details")
+
+        edit_title = st.text_input(
+            "Job Title",
+            value=current_job["title"]
+        )
+
+        edit_company = st.text_input(
+            "Company",
+            value=current_job["company"]
+        )
+
+        edit_url = st.text_input(
+            "URL",
+            value=current_job["url"]
+        )
+
+        edit_notes = st.text_area(
+            "Notes",
+            value=current_job["notes"],
+            key="edit_notes"
+        )
+        
+        edit_job_description = st.text_area(
+            "Job Description",
+            value=current_job["job_description"],
+            height=250
+        )
+
+        edit_keywords = st.text_area(
+            "Keywords",
+            value=current_job["keywords"],
+            height=100
+        )
+
+        edit_recruiter_notes = st.text_area(
+            "Recruiter Notes",
+            value=current_job["recruiter_notes"],
+            height=250
+        )
+
+        edit_interview_date = st.text_input(
+            "Interview Date",
+            value=current_job["interview_date"]
+        )
+
+        edit_followup_date = st.text_input(
+            "Follow-up Date",
+            value=current_job["followup_date"]
+        )
+        if st.button("💾 Save Changes"):
+            cursor.execute(
+                    """
+                    UPDATE jobs
+                    SET
+                        title = ?,
+                        company = ?,
+                        url = ?,
+                        notes = ?,
+                        interview_date = ?,
+                        followup_date = ?,
+                        job_description = ?,
+                        keywords = ?,
+                        recruiter_notes = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        edit_title,
+                        edit_company,
+                        edit_url,
+                        edit_notes,
+                        edit_interview_date,
+                        edit_followup_date,
+                        edit_job_description,
+                        edit_keywords,
+                        edit_recruiter_notes,
+                        int(selected_job)
+                    )
+                )
+            conn.commit()
+            
+            st.success(
+                    "Changes saved!"
+                )
+
+            st.rerun()
 
         # ------------------------
         # FUNNEL

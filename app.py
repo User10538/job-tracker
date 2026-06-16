@@ -58,7 +58,6 @@ add_column_if_missing(
 )
 
 add_column_if_missing(
-
     cursor,
     conn,
     "keywords"
@@ -68,6 +67,12 @@ add_column_if_missing(
     cursor,
     conn,
     "recruiter_notes"
+)
+
+add_column_if_missing(
+    cursor,
+    conn,
+    "ai_prompt"
 )
 
 # ------------------------
@@ -133,20 +138,47 @@ with tab1:
         ]
     )
 
-    notes = st.text_area("Notes")
+    notes = st.text_area(
+    "Notes",
+    key="new_notes"
+    )
 
     job_description = st.text_area(
     "Job Description",
     height=250
     )
 
+keywords = ""
+recruiter_notes = ""
+ai_prompt = ""
+
+if job_description:
+
     keywords = extract_keywords(
-    job_description
+        job_description
     )
 
     recruiter_notes = generate_recruiter_notes(
-    keywords
+        keywords
     )
+
+    ai_prompt = f"""
+    You are an experienced recruiter, hiring manager, and interview coach.
+
+    Analyze the following job description and provide:
+
+    1. Job Summary
+    2. Recruiter Screening Questions
+    3. Technical Interview Questions
+    4. Key Skills to Emphasize
+    5. Potential Weaknesses or Gaps
+    6. 30-Second Elevator Pitch
+    7. Interview Preparation Notes
+
+    Job Description:
+
+    {job_description}
+    """
 
     if keywords:
 
@@ -163,6 +195,40 @@ with tab1:
         st.success(
             f"Keywords: {keywords}"
         )
+
+        ai_prompt = f"""
+            You are an experienced recruiter, hiring manager, and interview coach.
+
+            Analyze the following job description and provide:
+
+            1. Job Summary
+            2. Recruiter Screening Questions
+            3. Technical Interview Questions
+            4. Key Skills to Emphasize
+            5. Potential Weaknesses or Gaps
+            6. 30-Second Elevator Pitch
+            7. Interview Preparation Notes
+
+            Job Description:
+
+            {job_description}
+            """
+        
+        recruiter_notes = generate_recruiter_notes(
+            keywords
+        )
+        
+        if job_description:
+
+            st.subheader(
+                "🤖 ChatGPT Prompt"
+            )
+
+            st.code(
+                ai_prompt,
+                language="text"
+            )
+        
 
     if st.button("Save Job"):
 
@@ -181,9 +247,10 @@ with tab1:
                 notes,
                 job_description,
                 keywords,
-                recruiter_notes
+                recruiter_notes,
+                 ai_prompt
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -197,7 +264,8 @@ with tab1:
                 notes,
                 job_description,
                 keywords,
-                recruiter_notes
+                recruiter_notes,
+                ai_prompt
             )
         )
 
@@ -374,7 +442,9 @@ with tab2:
                 "id",
                 "url",
                 "job_description",
-                "keywords"
+                "keywords",
+                "recruiter_notes",
+                "ai_prompt"
             ],
             errors="ignore"
         )
@@ -428,6 +498,25 @@ with tab2:
         current_job = df[
             df["id"] == selected_job
         ].iloc[0]
+
+        st.divider()
+
+        st.subheader("🤖 AI Prompt")
+
+        if current_job["ai_prompt"]:
+
+
+            st.code(
+                current_job["ai_prompt"],
+                language="text"
+            )
+
+        st.text_area(
+            "Copy into ChatGPT",
+            value=current_job["ai_prompt"],
+            height=300,
+            key="view_ai_prompt"
+        )
 
         open_job_link(current_job["url"])
 
@@ -509,51 +598,67 @@ with tab2:
 
         edit_title = st.text_input(
             "Job Title",
-            value=current_job["title"]
+            value=current_job["title"],
+            key=f"edit_title_{selected_job}"
         )
 
         edit_company = st.text_input(
             "Company",
-            value=current_job["company"]
+            value=current_job["company"],
+            key=f"edit_company_{selected_job}"
+
         )
 
         edit_url = st.text_input(
             "URL",
-            value=current_job["url"]
+            value=current_job["url"],
+            key=f"edit_url_{selected_job}"
         )
 
         edit_notes = st.text_area(
             "Notes",
             value=current_job["notes"],
-            key="edit_notes"
+            key=f"edit_notes_{selected_job}"
         )
 
         edit_job_description = st.text_area(
             "Job Description",
             value=current_job["job_description"],
-            height=250
+            height=250,
+            key=f"edit_job_description_{selected_job}"
         )
 
         edit_keywords = st.text_area(
             "Keywords",
             value=current_job["keywords"],
-            height=100
+            height=100,
+            key=f"edit_keywords_{selected_job}"
         )
 
         edit_recruiter_notes = st.text_area(
-            "Recruiter Notes",
+            "Edit Recruiter Notes",
             value=current_job["recruiter_notes"],
-            height=250
+            height=250,
+            key=f"edit_recruiter_notes_{selected_job}"
+        )
+
+        edit_ai_prompt = st.text_area(
+            "AI Prompt",
+            value=current_job["ai_prompt"],
+            height=300,
+            key=f"edit_ai_prompt_{selected_job}"
         )
 
         edit_interview_date = st.text_input(
             "Interview Date",
-            value=current_job["interview_date"]
+            value=current_job["interview_date"],
+            key=f"edit_interview_date_{selected_job}"
         )
 
         edit_followup_date = st.text_input(
             "Follow-up Date",
-            value=current_job["followup_date"]
+            value=current_job["followup_date"],
+            key=f"edit_followup_date_{selected_job}"
         )
         if st.button("💾 Save Changes"):
             cursor.execute(
@@ -568,7 +673,8 @@ with tab2:
                         followup_date = ?,
                         job_description = ?,
                         keywords = ?,
-                        recruiter_notes = ?
+                        recruiter_notes = ?,
+                        ai_prompt = ?
                     WHERE id = ?
                     """,
                     (
@@ -581,6 +687,7 @@ with tab2:
                         edit_job_description,
                         edit_keywords,
                         edit_recruiter_notes,
+                        edit_ai_prompt,
                         int(selected_job)
                     )
                 )
@@ -591,11 +698,6 @@ with tab2:
                 )
 
             st.rerun()
-            
-        else:
-            st.info(
-            "No jobs added yet."
-             )
 
 # ------------------------
 # FUNNEL

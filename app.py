@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+import os
 from datetime import date
 
 from utils.helpers import (
@@ -75,6 +76,12 @@ add_column_if_missing(
     "ai_prompt"
 )
 
+add_column_if_missing(
+    cursor,
+    conn,
+    "resume_file"
+)
+
 # ------------------------
 # PAGE CONFIG
 # ------------------------
@@ -141,6 +148,11 @@ with tab1:
     notes = st.text_area(
     "Notes",
     key="new_notes"
+    )
+
+    resume_file = st.file_uploader(
+    "Resume Used",
+    type=["pdf", "docx"]
     )
 
     job_description = st.text_area(
@@ -232,6 +244,29 @@ if job_description:
 
     if st.button("Save Job"):
 
+        resume_path = ""
+
+if resume_file:
+
+    os.makedirs(
+        "resumes",
+        exist_ok=True
+    )
+
+    resume_path = os.path.join(
+        "resumes",
+        resume_file.name
+    )
+
+    with open(
+        resume_path,
+        "wb"
+    ) as f:
+
+        f.write(
+            resume_file.getbuffer()
+        )
+
         cursor.execute(
             """
             INSERT INTO jobs
@@ -248,9 +283,10 @@ if job_description:
                 job_description,
                 keywords,
                 recruiter_notes,
-                 ai_prompt
+                ai_prompt,
+                resume_path
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -265,7 +301,8 @@ if job_description:
                 job_description,
                 keywords,
                 recruiter_notes,
-                ai_prompt
+                ai_prompt,
+                resume_file
             )
         )
 
@@ -296,6 +333,10 @@ with tab2:
         df[df["status"] == "Applied"]
     )
 
+    rejected = len(
+        df[df["status"] == "Rejected"]
+    )
+
     interviews = len(
         df[df["status"] == "Interview"]
     )
@@ -304,6 +345,7 @@ with tab2:
         df[df["status"] == "Offer"]
     )
 
+    
     st.sidebar.metric(
         "Total Jobs",
         total_jobs
@@ -315,14 +357,19 @@ with tab2:
     )
 
     st.sidebar.metric(
+        "Rejected",
+        rejected
+    )
+
+    st.sidebar.metric(
         "Interviews",
         interviews
     )
 
-    st.sidebar.metric(
-        "Offers",
-        offers
-    )
+    #st.sidebar.metric(
+    #    "Offers",
+    #    offers
+    #)
 
     st.sidebar.divider()
 
@@ -499,25 +546,41 @@ with tab2:
             df["id"] == selected_job
         ].iloc[0]
 
-        st.divider()
-
-        st.subheader("🤖 AI Prompt")
-
-        if current_job["ai_prompt"]:
-
-
-            st.code(
-                current_job["ai_prompt"],
-                language="text"
-            )
-
-        st.text_area(
-            "Copy into ChatGPT",
-            value=current_job["ai_prompt"],
-            height=300,
-            key="view_ai_prompt"
+        resume_path = current_job.get(
+            "resume_file",
+            ""
         )
 
+        if (
+            resume_path
+            and os.path.exists(resume_path)
+        ):
+
+            st.subheader(
+                "📄 Resume Used"
+            )
+
+            st.write(
+                os.path.basename(
+                    resume_path
+                )
+            )
+
+            with open(
+                resume_path,
+                "rb"
+            ) as file:
+
+                st.download_button(
+                    "📥 Download Resume",
+                    file,
+                    file_name=os.path.basename(
+                        resume_path
+                    ),
+                    key=f"download_resume_{selected_job}"
+                )
+
+        
         open_job_link(current_job["url"])
 
         statuses = [
@@ -660,6 +723,26 @@ with tab2:
             value=current_job["followup_date"],
             key=f"edit_followup_date_{selected_job}"
         )
+
+        st.divider()
+
+        st.subheader("🤖 AI Prompt")
+
+        if current_job["ai_prompt"]:
+
+
+            st.code(
+                current_job["ai_prompt"],
+                language="text"
+            )
+
+        st.text_area(
+            "Copy into ChatGPT",
+            value=current_job["ai_prompt"],
+            height=300,
+            key="view_ai_prompt"
+        )
+
         if st.button("💾 Save Changes"):
             cursor.execute(
                     """
@@ -698,6 +781,7 @@ with tab2:
                 )
 
             st.rerun()
+        
 
 # ------------------------
 # FUNNEL

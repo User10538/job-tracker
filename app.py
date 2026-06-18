@@ -41,7 +41,7 @@ for col in [
 st.set_page_config(page_title="Personal Job Tracker", layout="wide")
 st.title("📋 Personal Job Tracker")
 
-tab1, tab2, tab3 = st.tabs(["Add Job","View Jobs","Application Funnel"])
+tab1, tab2, tab3, tab4 = st.tabs(["Add Job","View Jobs","Application Funnel","Interview Prep"])
 
 with tab1:
     st.subheader("Add a Job")
@@ -625,3 +625,16 @@ with tab3:
         st.bar_chart(
             funnel_data
             )
+
+
+# ------------------------
+# Interview Preparation
+# ------------------------
+
+
+with tab4:
+    st.divider()
+    
+    st.subheader(
+        "Interview Preparation"
+        )

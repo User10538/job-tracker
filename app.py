@@ -11,16 +11,9 @@ from utils.helpers import (
     extract_keywords,
     generate_recruiter_notes
 )
-
-from utils.database import (
-    add_column_if_missing
-)
+from utils.database import add_column_if_missing
 
 DB = "jobs.db"
-
-# ------------------------
-# DATABASE
-# ------------------------
 
 conn = sqlite3.connect(DB, check_same_thread=False)
 cursor = conn.cursor()
@@ -37,277 +30,96 @@ CREATE TABLE IF NOT EXISTS jobs (
     notes TEXT
 )
 """)
-
 conn.commit()
 
-add_column_if_missing(
-    cursor,
-    conn,
-    "interview_date"
-)
+for col in [
+    "interview_date","followup_date","job_description",
+    "keywords","recruiter_notes","ai_prompt","resume_file"
+]:
+    add_column_if_missing(cursor, conn, col)
 
-add_column_if_missing(
-    cursor,
-    conn,
-    "followup_date"
-)
-
-add_column_if_missing(
-    cursor,
-    conn,
-    "job_description"
-)
-
-add_column_if_missing(
-    cursor,
-    conn,
-    "keywords"
-)
-
-add_column_if_missing(
-    cursor,
-    conn,
-    "recruiter_notes"
-)
-
-add_column_if_missing(
-    cursor,
-    conn,
-    "ai_prompt"
-)
-
-add_column_if_missing(
-    cursor,
-    conn,
-    "resume_file"
-)
-
-# ------------------------
-# PAGE CONFIG
-# ------------------------
-
-st.set_page_config(
-    page_title="Personal Job Tracker",
-    layout="wide"
-)
-
+st.set_page_config(page_title="Personal Job Tracker", layout="wide")
 st.title("📋 Personal Job Tracker")
 
-# ------------------------
-# TABS
-# ------------------------
-
-tab1, tab2, tab3= st.tabs(
-    ["Add Job", "View Jobs", "Application Funnel"]
-)
-
-# ------------------------
-# ADD JOB
-# ------------------------
+tab1, tab2, tab3 = st.tabs(["Add Job","View Jobs","Application Funnel"])
 
 with tab1:
-
     st.subheader("Add a Job")
 
     title = st.text_input("Job Title")
-
     company = st.text_input("Company")
-
     url = st.text_input("Job URL")
-
     source = detect_source(url)
-
     st.info(f"Detected Source: {source}")
 
-    application_date = st.date_input(
-        "Application Date",
-        value=date.today()
-    )
+    application_date = st.date_input("Application Date", value=date.today())
+    interview_date = st.date_input("Interview Date", value=date.today())
+    followup_date = st.date_input("Follow-up Date", value=date.today())
 
-    interview_date = st.date_input(
-    "Interview Date",
-    value=date.today()
-    )
+    status = st.selectbox("Status",
+        ["New","Applied","Interview","Rejected","Offer"])
 
-    followup_date = st.date_input(
-        "Follow-up Date",
-        value=date.today()
-    )
+    notes = st.text_area("Notes", key="new_notes")
+    resume_file = st.file_uploader("Resume Used", type=["pdf","docx"])
+    job_description = st.text_area("Job Description", height=250)
 
-    status = st.selectbox(
-        "Status",
-        [
-            "New",
-            "Applied",
-            "Interview",
-            "Rejected",
-            "Offer"
-        ]
-    )
+    keywords = ""
+    recruiter_notes = ""
+    ai_prompt = ""
 
-    notes = st.text_area(
-    "Notes",
-    key="new_notes"
-    )
+    if job_description:
+        keywords = extract_keywords(job_description)
+        recruiter_notes = generate_recruiter_notes(keywords)
 
-    resume_file = st.file_uploader(
-    "Resume Used",
-    type=["pdf", "docx"]
-    )
+        ai_prompt = f"""Analyze this job description:
 
-    job_description = st.text_area(
-    "Job Description",
-    height=250
-    )
+{job_description}
 
-keywords = ""
-recruiter_notes = ""
-ai_prompt = ""
+Provide:
+1. Job Summary
+2. Recruiter Questions
+3. Technical Questions
+4. Key Skills
+5. Interview Preparation Notes
+"""
 
-if job_description:
-
-    keywords = extract_keywords(
-        job_description
-    )
-
-    recruiter_notes = generate_recruiter_notes(
-        keywords
-    )
-
-    ai_prompt = f"""
-    You are an experienced recruiter, hiring manager, and interview coach.
-
-    Analyze the following job description and provide:
-
-    1. Job Summary
-    2. Recruiter Screening Questions
-    3. Technical Interview Questions
-    4. Key Skills to Emphasize
-    5. Potential Weaknesses or Gaps
-    6. 30-Second Elevator Pitch
-    7. Interview Preparation Notes
-
-    Job Description:
-
-    {job_description}
-    """
-
-    if keywords:
-
-        st.subheader(
-        "Recruiter Cheat Sheet"
-    )
-
-        st.text_area(
-            "Recruiter Notes",
-            recruiter_notes,
-            height=250
-    )
-
-        st.success(
-            f"Keywords: {keywords}"
-        )
-
-        ai_prompt = f"""
-            You are an experienced recruiter, hiring manager, and interview coach.
-
-            Analyze the following job description and provide:
-
-            1. Job Summary
-            2. Recruiter Screening Questions
-            3. Technical Interview Questions
-            4. Key Skills to Emphasize
-            5. Potential Weaknesses or Gaps
-            6. 30-Second Elevator Pitch
-            7. Interview Preparation Notes
-
-            Job Description:
-
-            {job_description}
-            """
-        
-        recruiter_notes = generate_recruiter_notes(
-            keywords
-        )
-        
-        if job_description:
-
-            st.subheader(
-                "🤖 ChatGPT Prompt"
-            )
-
-            st.code(
-                ai_prompt,
-                language="text"
-            )
-        
+        st.subheader("Recruiter Cheat Sheet")
+        st.text_area("Recruiter Notes", recruiter_notes, height=250)
+        st.success(f"Keywords: {keywords}")
+        st.subheader("🤖 ChatGPT Prompt")
+        st.code(ai_prompt)
 
     if st.button("Save Job"):
-
         resume_path = ""
 
-if resume_file:
+        if resume_file:
+            os.makedirs("resumes", exist_ok=True)
+            resume_path = os.path.join("resumes", resume_file.name)
 
-    os.makedirs(
-        "resumes",
-        exist_ok=True
-    )
+            with open(resume_path, "wb") as f:
+                f.write(resume_file.getbuffer())
 
-    resume_path = os.path.join(
-        "resumes",
-        resume_file.name
-    )
-
-    with open(
-        resume_path,
-        "wb"
-    ) as f:
-
-        f.write(
-            resume_file.getbuffer()
+        cursor.execute("""
+        INSERT INTO jobs (
+            title, company, source, url,
+            application_date, interview_date,
+            followup_date, status, notes,
+            job_description, keywords,
+            recruiter_notes, ai_prompt,
+            resume_file
         )
-
-        cursor.execute(
-            """
-            INSERT INTO jobs
-            (
-                title,
-                company,
-                source,
-                url,
-                application_date,
-                interview_date,
-                followup_date,
-                status,
-                notes,
-                job_description,
-                keywords,
-                recruiter_notes,
-                ai_prompt,
-                resume_path
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                title,
-                company,
-                source,
-                url,
-                str(application_date),
-                str(interview_date),
-                str(followup_date),
-                status,
-                notes,
-                job_description,
-                keywords,
-                recruiter_notes,
-                ai_prompt,
-                resume_file
-            )
-        )
-
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            title, company, source, url,
+            str(application_date),
+            str(interview_date),
+            str(followup_date),
+            status, notes,
+            job_description, keywords,
+            recruiter_notes, ai_prompt,
+            resume_path
+        ))
         conn.commit()
-
         st.success("Job saved!")
 
 # ------------------------

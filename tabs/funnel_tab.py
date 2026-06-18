@@ -1,8 +1,8 @@
+'''
+Funnel tab4
+'''
 import streamlit as st
 import pandas as pd
-# ------------------------
-# FUNNEL tab3
-# ------------------------
 
 def show(applied, interviews, offers, rejected):
     st.divider()

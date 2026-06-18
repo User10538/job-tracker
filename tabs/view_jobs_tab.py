@@ -1,16 +1,17 @@
-from datetime import date
-import streamlit as st
-import pandas as pd
+'''
+VIEW JOBS tab2
+'''
+
 import sqlite3
 import os
+import streamlit as st
+import pandas as pd
 
 from utils.helpers import (
     open_job_link,
     status_emoji
 )
-# ------------------------
-# VIEW JOBS
-# ------------------------
+
 def show():
     DB = "jobs.db"
 

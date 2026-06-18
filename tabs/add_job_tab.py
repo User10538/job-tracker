@@ -1,9 +1,12 @@
+'''
+ADD JOBS tab1
+'''
+
+import sqlite3
+import os
 from datetime import date
 import streamlit as st
 import pandas as pd
-import sqlite3
-import os
-
 
 from utils.helpers import (
     detect_source,
@@ -19,10 +22,6 @@ df = pd.read_sql_query(
     "SELECT * FROM jobs ORDER BY id DESC",
     conn
     )
-
-# ------------------------
-# ADD JOBS
-# ------------------------
 
 def show():
     st.subheader("Add a Job")

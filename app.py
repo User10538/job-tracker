@@ -1,16 +1,6 @@
-import streamlit as st
 import sqlite3
+import streamlit as st
 import pandas as pd
-import os
-from datetime import date
-
-from utils.helpers import (
-    detect_source,
-    open_job_link,
-    status_emoji,
-    extract_keywords,
-    generate_recruiter_notes
-)
 
 from tabs.funnel_tab import show as show_funnel
 from tabs.interview_prep_tab import show as show_interview_prep
@@ -59,7 +49,7 @@ interviews = len(df[df["status"] == "Interview"])
 offers = len(df[df["status"] == "Offer"])
 rejected = len(df[df["status"] == "Rejected"])
 
-tab1, tab2, tab3, tab4 = st.tabs(["Add Job","View Jobs","Funnel","Interview Prep"])
+tab1, tab2, tab3, tab4 = st.tabs(["Add Job","View Jobs","Interview Prep","Funnel"])
 
 # ------------------------
 # ADD JOBS
@@ -73,22 +63,22 @@ with tab1:
 # ------------------------
 with tab2:
     show_view_jobs()
+      
+# ------------------------
+# Interview Preparation
+# ------------------------
+
+with tab3:
+    show_interview_prep()
 
 # ------------------------
 # Funnel
 # ------------------------
 
-with tab3:
+with tab4:
     show_funnel(
         applied=applied,
         interviews=interviews,
         offers=offers,
         rejected=rejected
     )
-        
-# ------------------------
-# Interview Preparation
-# ------------------------
-
-with tab4:
-    show_interview_prep()

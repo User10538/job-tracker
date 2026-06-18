@@ -11,7 +11,12 @@ from utils.helpers import (
     extract_keywords,
     generate_recruiter_notes
 )
-from utils.database import add_column_if_missing
+
+from tabs.funnel_tab import show as show_funnel
+from tabs.interview_prep_tab import show as show_interview_prep
+
+
+from utils.database import (add_column_if_missing)
 
 DB = "jobs.db"
 
@@ -41,7 +46,7 @@ for col in [
 st.set_page_config(page_title="Personal Job Tracker", layout="wide")
 st.title("📋 Personal Job Tracker")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Add Job","View Jobs","Application Funnel","Interview Prep"])
+tab1, tab2, tab3, tab4 = st.tabs(["Add Job","View Jobs","Funnel","Interview Prep"])
 
 with tab1:
     st.subheader("Add a Job")
@@ -593,48 +598,23 @@ with tab2:
                 )
 
             st.rerun()
-        
 
 # ------------------------
-# FUNNEL
+# Funnel
 # ------------------------
-
 
 with tab3:
-        st.divider()
-
-        st.subheader(
-            "Application Funnel"
-        )
-
-        funnel_data = pd.DataFrame(
-            {
-                "Count": [
-                    applied,
-                    interviews,
-                    offers
-                ]
-            },
-            index=[
-                "Applied",
-                "Interview",
-                "Offer"
-            ]
-        )
+    show_funnel(
+        applied=applied,
+        interviews=interviews,
+        offers=offers,
+        rejected=rejected
+    )
         
-        st.bar_chart(
-            funnel_data
-            )
-
-
 # ------------------------
 # Interview Preparation
 # ------------------------
 
 
 with tab4:
-    st.divider()
-    
-    st.subheader(
-        "Interview Preparation"
-        )
+    show_interview_prep()

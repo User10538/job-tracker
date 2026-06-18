@@ -1,0 +1,13 @@
+# ------------------------
+# Interview Preparation tab 4
+# ------------------------
+import streamlit as st
+import pandas as pd
+
+def show():
+    st.divider()
+    
+    st.subheader(
+        "Interview Preparation"
+        )
+    st.write("Prepare for upcoming interview")

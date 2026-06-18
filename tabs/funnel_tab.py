@@ -1,8 +1,8 @@
+import streamlit as st
+import pandas as pd
 # ------------------------
 # FUNNEL tab3
 # ------------------------
-import streamlit as st
-import pandas as pd
 
 def show(applied, interviews, offers, rejected):
     st.divider()
@@ -16,13 +16,15 @@ def show(applied, interviews, offers, rejected):
             "Count": [
             applied,
             interviews,
-            offers
+            offers,
+            rejected
             ]
             },
             index=[
                 "Applied",
                 "Interview",
-                "Offer"
+                "Offer",
+                "Rejected"
             ]
         )
     st.bar_chart(

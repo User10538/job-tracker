@@ -1,8 +1,8 @@
+from datetime import date
 import streamlit as st
 import pandas as pd
 import sqlite3
 import os
-from datetime import date
 
 from utils.helpers import (
     open_job_link,

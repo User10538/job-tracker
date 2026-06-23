@@ -74,35 +74,40 @@ Provide:
         st.subheader("🤖 ChatGPT Prompt")
         st.code(ai_prompt)
 
-    if st.button("Save Job"):
-        resume_path = ""
+        if st.button("Save Job"):
+            try:
+                resume_path = ""
 
-        if resume_file:
-            os.makedirs("resumes", exist_ok=True)
-            resume_path = os.path.join("resumes", resume_file.name)
+                if resume_file:
+                    os.makedirs("resumes", exist_ok=True)
+                    resume_path = os.path.join("resumes", resume_file.name)
 
-            with open(resume_path, "wb") as f:
-                f.write(resume_file.getbuffer())
+                    with open(resume_path, "wb") as f:
+                        f.write(resume_file.getbuffer())
 
-        cursor.execute("""
-        INSERT INTO jobs (
-            title, company, source, url,
-            application_date, interview_date,
-            followup_date, status, notes,
-            job_description, keywords,
-            recruiter_notes, ai_prompt,
-            resume_file
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            title, company, source, url,
-            str(application_date),
-            str(interview_date),
-            str(followup_date),
-            status, notes,
-            job_description, keywords,
-            recruiter_notes, ai_prompt,
-            resume_path
-        ))
-        conn.commit()
-        st.success("Job saved!")
+                cursor.execute("""
+                INSERT INTO jobs (
+                    title, company, source, url,
+                    application_date, interview_date,
+                    followup_date, status, notes,
+                    job_description, keywords,
+                    recruiter_notes, ai_prompt,
+                    resume_file
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    title, company, source, url,
+                    str(application_date),
+                    str(interview_date),
+                    str(followup_date),
+                    status, notes,
+                    job_description, keywords,
+                    recruiter_notes, ai_prompt,
+                    resume_path
+                ))
+
+                conn.commit()
+                st.success("Job saved!")
+
+            except Exception as e:
+                st.exception(e)

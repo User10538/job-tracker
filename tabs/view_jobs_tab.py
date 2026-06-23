@@ -248,19 +248,16 @@ def show():
             df["id"] == selected_job
         ].iloc[0]
 
-        resume_path = current_job.get(
-            "resume_file",
-            ""
-        )
+        resume_path = current_job.get("resume_file", "")
 
         if (
-            resume_path
+            pd.notna(resume_path)
+            and isinstance(resume_path, str)
+            and resume_path.strip()
             and os.path.exists(resume_path)
         ):
 
-            st.subheader(
-                "📄 Resume Used"
-            )
+            st.subheader("📄 Resume Used")
 
             st.write(
                 os.path.basename(

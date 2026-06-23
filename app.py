@@ -23,14 +23,15 @@ CREATE TABLE IF NOT EXISTS jobs (
     url TEXT,
     application_date TEXT,
     status TEXT,
-    notes TEXT
+    notes TEXT, 
+    resume_text TEXT
 )
 """)
 conn.commit()
 
 for col in [
     "interview_date","followup_date","job_description",
-    "keywords","recruiter_notes","ai_prompt","resume_file"
+    "keywords","recruiter_notes","ai_prompt","resume_file", "resume_text"
 ]:
     add_column_if_missing(cursor, conn, col)
 
